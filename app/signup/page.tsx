@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Turnstile from "@/app/components/Turnstile";
 
 function passwordOk(p: string) {
   return (
@@ -19,11 +20,17 @@ export default function SignupPage() {
   const [nationId, setNationId] = useState("");
   const [leader, setLeader] = useState("");
   const [password, setPassword] = useState("");
-  const [captcha, setCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [keep, setKeep] = useState(true);
   const [age18, setAge18] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function resetCaptcha() {
+    setCaptchaToken("");
+    setCaptchaReset((n) => n + 1);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,7 +47,7 @@ export default function SignupPage() {
       setError("Password needs upper, lower, number, symbol, 8+ chars.");
       return;
     }
-    if (!captcha) {
+    if (!captchaToken) {
       setError("Complete the captcha.");
       return;
     }
@@ -60,16 +67,20 @@ export default function SignupPage() {
           password,
           keep,
           age18,
+          captchaToken,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Signup failed");
+        resetCaptcha();
         return;
       }
-      router.push("/login");
+      router.push("/");
+      router.refresh();
     } catch {
       setError("Network error");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -94,6 +105,7 @@ export default function SignupPage() {
             <label className="mb-1 block text-sm text-[var(--muted)]">Leader name</label>
             <input type="text" value={leader} onChange={(e) => setLeader(e.target.value)}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 outline-none focus:border-[var(--green)]" />
+            <p className="mt-1 text-xs text-[var(--muted)]">Must match the leader of that nation in the game</p>
           </div>
           <div>
             <label className="mb-1 block text-sm text-[var(--muted)]">Password</label>
@@ -101,10 +113,7 @@ export default function SignupPage() {
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 outline-none focus:border-[var(--green)]" />
             <p className="mt-1 text-xs text-[var(--muted)]">Upper, lower, number, symbol, min 8</p>
           </div>
-          <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-            <input type="checkbox" checked={captcha} onChange={(e) => setCaptcha(e.target.checked)} className="size-4 accent-[var(--green)]" />
-            I&apos;m not a robot
-          </label>
+          <Turnstile onToken={setCaptchaToken} resetKey={captchaReset} />
           <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
             <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-4 accent-[var(--green)]" />
             Keep me logged in
