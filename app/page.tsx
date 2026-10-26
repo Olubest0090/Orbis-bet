@@ -1,7 +1,15 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSessionUserId } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import BottomNav from "@/app/components/BottomNav";
+
+const CHIPS: { href: string; label: string }[] = [
+  { href: "/football", label: "Football" },
+  { href: "/football", label: "Live" },
+  { href: "/me", label: "My Bets" },
+  { href: "/me/shares", label: "Shares" },
+];
 
 export default async function HomePage() {
   const userId = await getSessionUserId();
@@ -36,30 +44,34 @@ export default async function HomePage() {
       </div>
 
       <div className="mt-4 flex gap-3 overflow-x-auto px-4 text-sm">
-        {["Football", "Live", "My Bets", "Shares"].map((t) => (
-          <span key={t} className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5">
-            {t}
-          </span>
+        {CHIPS.map((c) => (
+          <Link
+            key={c.label}
+            href={c.href}
+            className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5"
+          >
+            {c.label}
+          </Link>
         ))}
       </div>
 
       <section className="mt-4 px-4">
-        <h2 className="mb-2 text-sm font-semibold text-[var(--muted)]">HOT · Matches</h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-[var(--muted)]">HOT · Matches</h2>
+          <Link href="/football" className="text-xs text-[var(--green)]">
+            View all
+          </Link>
+        </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-          <p className="text-xs text-[var(--muted)]">Placeholder · odds API later</p>
-          <div className="mt-2 flex justify-between text-sm font-medium">
-            <span>Home</span>
-            <span className="text-[var(--muted)]">vs</span>
-            <span>Away</span>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {[["1", "1.85"], ["X", "3.40"], ["2", "4.20"]].map(([k, o]) => (
-              <button key={k} type="button" className="rounded-lg border border-[var(--border)] bg-[var(--bg)] py-2">
-                <div className="text-xs text-[var(--muted)]">{k}</div>
-                <div className="font-semibold text-[var(--green)]">{o}</div>
-              </button>
-            ))}
-          </div>
+          <p className="text-xs text-[var(--muted)]">
+            Open Football for live odds from the feed.
+          </p>
+          <Link
+            href="/football"
+            className="mt-3 block w-full rounded-xl bg-[var(--green)] py-3 text-center text-sm font-semibold text-black"
+          >
+            Open Football
+          </Link>
         </div>
       </section>
 
