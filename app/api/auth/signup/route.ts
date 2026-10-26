@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, setSession } from "@/lib/auth";
+import { verifyTurnstile, clientIp } from "@/lib/captcha";
+import { fetchNation } from "@/lib/pnw";
 
 function passwordOk(p: string) {
   return (
@@ -15,14 +17,23 @@ function passwordOk(p: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const nationId = Number(String(body.nationId || "").trim());
+    const nationIdRaw = String(body.nationId || "").trim();
     const leader = String(body.leader || "").trim();
     const password = String(body.password || "");
     const age18 = Boolean(body.age18);
+    const keep = Boolean(body.keep);
+    const captchaToken = String(body.captchaToken || "");
 
-    if (!nationId || !leader || !password) {
+    if (!nationIdRaw || !leader || !password) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+    if (!/^\d{1,9}$/.test(nationIdRaw)) {
+      return NextResponse.json(
+        { error: "Nation ID must be numbers only" },
+        { status: 400 }
+      );
+    }
+    const nationId = Number(nationIdRaw);
     if (!passwordOk(password)) {
       return NextResponse.json(
         { error: "Password needs upper, lower, number, symbol, 8+ chars" },
@@ -32,14 +43,45 @@ export async function POST(req: Request) {
     if (!age18) {
       return NextResponse.json({ error: "Must be 18+" }, { status: 400 });
     }
+    if (!(await verifyTurnstile(captchaToken, clientIp(req)))) {
+      return NextResponse.json(
+        { error: "Captcha failed. Try again." },
+        { status: 400 }
+      );
+    }
+
+    // Verify the nation exists and the leader name matches it.
+    let nation;
+    try {
+      nation = await fetchNation(nationId);
+    } catch (e) {
+      console.error("P&W lookup failed:", e);
+      return NextResponse.json(
+        { error: "Could not reach Politics & War. Try again shortly." },
+        { status: 502 }
+      );
+    }
+    if (!nation) {
+      return NextResponse.json({ error: "Nation ID not found" }, { status: 400 });
+    }
+    if (nation.leader_name.trim().toLowerCase() !== leader.toLowerCase()) {
+      return NextResponse.json(
+        { error: "Leader name does not match that nation" },
+        { status: 400 }
+      );
+    }
 
     const db = supabaseAdmin();
     const password_hash = await hashPassword(password);
-    const { error } = await db.from("orbis_users").insert({
-      nation_id: nationId,
-      leader_name: leader,
-      password_hash,
-    });
+    const { data: created, error } = await db
+      .from("orbis_users")
+      .insert({
+        nation_id: nationId,
+        leader_name: nation.leader_name.trim(), // canonical spelling from the game
+        password_hash,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       if (error.code === "23505") {
@@ -48,11 +90,14 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("signup insert failed:", error.message);
+      return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
+
+    await setSession(created.id, keep ? 60 * 60 * 24 * 30 : 60 * 60 * 24);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Server error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("signup error:", e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

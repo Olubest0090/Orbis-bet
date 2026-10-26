@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Turnstile from "@/app/components/Turnstile";
 
 export default function LoginPage() {
   const router = useRouter();
   const [leader, setLeader] = useState("");
   const [password, setPassword] = useState("");
-  const [captcha, setCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [keep, setKeep] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +22,7 @@ export default function LoginPage() {
       setError("Leader name and password required.");
       return;
     }
-    if (!captcha) {
+    if (!captchaToken) {
       setError("Complete the captcha.");
       return;
     }
@@ -30,17 +32,26 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leader: leader.trim(), password, keep }),
+        body: JSON.stringify({
+          leader: leader.trim(),
+          password,
+          keep,
+          captchaToken,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || `Login failed (${res.status})`);
+        setCaptchaToken("");
+        setCaptchaReset((n) => n + 1);
         return;
       }
       router.push("/");
       router.refresh();
     } catch {
       setError("Network error");
+      setCaptchaToken("");
+      setCaptchaReset((n) => n + 1);
     } finally {
       setLoading(false);
     }
@@ -66,10 +77,7 @@ export default function LoginPage() {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 outline-none focus:border-[var(--green)]" />
           </div>
-          <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-            <input type="checkbox" checked={captcha} onChange={(e) => setCaptcha(e.target.checked)} className="size-4 accent-[var(--green)]" />
-            I&apos;m not a robot
-          </label>
+          <Turnstile onToken={setCaptchaToken} resetKey={captchaReset} />
           <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
             <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-4 accent-[var(--green)]" />
             Keep me logged in
