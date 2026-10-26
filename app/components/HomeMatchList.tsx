@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Match = {
@@ -66,13 +67,12 @@ export default function HomeMatchList() {
 
   return (
     <div className="space-y-3 px-4">
-      {error && (
-        <p className="text-xs text-[var(--muted)]">{error}</p>
-      )}
+      {error && <p className="text-xs text-[var(--muted)]">{error}</p>}
       {matches.map((m) => (
-        <div
+        <Link
           key={m.id}
-          className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4"
+          href={`/match/${encodeURIComponent(m.id)}`}
+          className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 active:opacity-90"
         >
           <p className="text-xs text-[var(--muted)]">
             {m.league} · {fmtWhen(m.commence)}
@@ -101,7 +101,7 @@ export default function HomeMatchList() {
               </div>
             ))}
           </div>
-        </div>
+        </Link>
       ))}
       {!loading && matches.length === 0 && (
         <p className="text-sm text-[var(--muted)]">No fixtures right now.</p>

@@ -31,9 +31,7 @@ export default function FootballPage() {
         }
         if (!cancelled) {
           setMatches(data.matches || []);
-          if (data.errors?.length) {
-            setError(`Partial: ${data.errors[0]}`);
-          }
+          if (data.errors?.length) setError(`Partial: ${data.errors[0]}`);
         }
       } catch {
         if (!cancelled) setError("Network error");
@@ -48,8 +46,7 @@ export default function FootballPage() {
 
   function fmtWhen(iso: string) {
     try {
-      const d = new Date(iso);
-      return d.toLocaleString(undefined, {
+      return new Date(iso).toLocaleString(undefined, {
         weekday: "short",
         month: "short",
         day: "numeric",
@@ -71,7 +68,7 @@ export default function FootballPage() {
       </div>
 
       <p className="text-xs text-[var(--muted)] mb-4">
-        Live 1X2 odds · decimal · for display. Placing bets comes next.
+        Tap a match for full markets. Placing bets comes next.
       </p>
 
       {loading && <p className="text-sm text-[var(--muted)]">Loading matches…</p>}
@@ -81,9 +78,10 @@ export default function FootballPage() {
 
       <div className="space-y-3">
         {matches.map((m) => (
-          <div
+          <Link
             key={m.id}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4"
+            href={`/match/${encodeURIComponent(m.id)}`}
+            className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4"
           >
             <p className="text-xs text-[var(--muted)]">
               {m.league} · {fmtWhen(m.commence)}
@@ -101,19 +99,18 @@ export default function FootballPage() {
                   ["2", m.odds.away],
                 ] as const
               ).map(([label, price]) => (
-                <button
+                <div
                   key={label}
-                  type="button"
-                  className="rounded-lg border border-[var(--border)] bg-[var(--bg)] py-2"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--bg)] py-2 text-center"
                 >
                   <div className="text-xs text-[var(--muted)]">{label}</div>
                   <div className="font-semibold text-[var(--green)]">
                     {price != null ? price.toFixed(2) : "—"}
                   </div>
-                </button>
+                </div>
               ))}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
