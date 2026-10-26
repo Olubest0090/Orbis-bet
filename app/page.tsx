@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getSessionUserId } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import BottomNav from "@/app/components/BottomNav";
 
 export default async function HomePage() {
   const userId = await getSessionUserId();
@@ -63,23 +63,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-3 gap-3 px-4">
-        <Link href="/me/deposit" className="rounded-xl bg-[var(--green)] py-3 text-center text-sm font-semibold text-black">Deposit</Link>
-        <Link href="/me/withdraw" className="rounded-xl border border-[var(--green)] py-3 text-center text-sm font-semibold text-[var(--green)]">Withdraw</Link>
-        <Link href="/me/shares" className="rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-center text-sm font-semibold">Shares</Link>
-      </section>
-
-      <nav className="fixed bottom-0 left-0 right-0 flex border-t border-[var(--border)] bg-[var(--card)] text-xs">
-        {[
-          ["/", "Home"],
-          ["/me", "Me"],
-          ["/api/auth/logout", "Log out"],
-        ].map(([href, label]) => (
-          <Link key={href} href={href} className="flex-1 py-3 text-center text-[var(--muted)]">
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <BottomNav />
     </main>
   );
 }

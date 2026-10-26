@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUserId } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import BottomNav from "@/app/components/BottomNav";
 
 export default async function MePage() {
   const userId = await getSessionUserId();
@@ -15,10 +16,11 @@ export default async function MePage() {
   if (!user) redirect("/login");
 
   return (
-    <main className="min-h-screen p-4 max-w-lg mx-auto">
+    <main className="min-h-screen p-4 pb-24 max-w-lg mx-auto">
       <h1 className="text-xl font-bold mb-4">Me</h1>
       <p className="text-sm text-[var(--muted)]">Leader</p>
       <p className="font-semibold">{user.leader_name}</p>
+      <p className="text-xs text-[var(--muted)]">Nation #{user.nation_id}</p>
       <p className="mt-3 text-2xl font-bold text-[var(--green)]">
         ${Number(user.balance).toLocaleString()}
       </p>
@@ -27,7 +29,7 @@ export default async function MePage() {
         <Link href="/me/withdraw" className="rounded-xl border border-[var(--green)] py-3 text-center text-sm font-semibold text-[var(--green)]">Withdraw</Link>
         <Link href="/me/shares" className="rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-center text-sm font-semibold">Shares</Link>
       </div>
-      <Link href="/api/auth/logout" className="mt-8 block text-center text-sm text-[var(--muted)]">Log out</Link>
+      <BottomNav />
     </main>
   );
 }
