@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 type MarketRow = {
   key: string;
@@ -20,15 +20,21 @@ type EventDetail = {
   error?: string;
 };
 
-export default function MatchDetailPage() {
+function MatchInner() {
   const params = useParams();
   const search = useSearchParams();
-  const id = String(params?.id || "");
+  const id = decodeURIComponent(String(params?.id || ""));
   const sport = search.get("sport") || "";
+  const homeQ = search.get("home") || "";
+  const awayQ = search.get("away") || "";
   const [data, setData] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({ h2h: true });
-  const [picked, setPicked] = useState<{ market: string; name: string; price: number } | null>(null);
+  const [picked, setPicked] = useState<{
+    market: string;
+    name: string;
+    price: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +44,8 @@ export default function MatchDetailPage() {
       try {
         const q = new URLSearchParams({ id });
         if (sport) q.set("sport", sport);
+        if (homeQ) q.set("home", homeQ);
+        if (awayQ) q.set("away", awayQ);
         const res = await fetch(`/api/odds/event?${q.toString()}`);
         const json = await res.json().catch(() => ({}));
         if (!cancelled) setData(json);
@@ -47,8 +55,8 @@ export default function MatchDetailPage() {
             id,
             league: "",
             commence: "",
-            home: "",
-            away: "",
+            home: homeQ,
+            away: awayQ,
             markets: [],
             error: "Network error",
           });
@@ -59,7 +67,7 @@ export default function MatchDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, sport]);
+  }, [id, sport, homeQ, awayQ]);
 
   function fmtWhen(iso: string) {
     if (!iso) return "";
@@ -78,24 +86,22 @@ export default function MatchDetailPage() {
 
   return (
     <main className="min-h-screen p-4 pb-28 max-w-lg mx-auto">
-      <div className="mb-4">
-        <Link href="/" className="text-sm text-[var(--muted)]">
-          ← Back
-        </Link>
-      </div>
+      <Link href="/" className="text-sm text-[var(--muted)]">
+        ← Back
+      </Link>
 
-      {loading && <p className="text-sm text-[var(--muted)]">Loading match…</p>}
+      {loading && <p className="mt-4 text-sm text-[var(--muted)]">Loading match…</p>}
 
       {!loading && data && (
         <>
-          <p className="text-xs text-[var(--muted)]">
+          <p className="mt-3 text-xs text-[var(--muted)]">
             {data.league}
             {data.commence ? ` · ${fmtWhen(data.commence)}` : ""}
           </p>
           <h1 className="mt-1 text-xl font-bold">
-            {data.home || "Home"}{" "}
-            <span className="text-[var(--muted)] font-normal text-base">vs</span>{" "}
-            {data.away || "Away"}
+            {data.home || homeQ || "Home"}{" "}
+            <span className="text-base font-normal text-[var(--muted)]">vs</span>{" "}
+            {data.away || awayQ || "Away"}
           </h1>
 
           {data.error && (
@@ -108,7 +114,7 @@ export default function MatchDetailPage() {
               return (
                 <div
                   key={m.key}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden"
+                  className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]"
                 >
                   <button
                     type="button"
@@ -125,7 +131,11 @@ export default function MatchDetailPage() {
                           key={o.name}
                           type="button"
                           onClick={() =>
-                            setPicked({ market: m.title, name: o.name, price: o.price })
+                            setPicked({
+                              market: m.title,
+                              name: o.name,
+                              price: o.price,
+                            })
                           }
                           className={`rounded-lg border px-2 py-2 text-center ${
                             picked?.name === o.name && picked?.market === m.title
@@ -133,7 +143,9 @@ export default function MatchDetailPage() {
                               : "border-[var(--border)] bg-[var(--bg)]"
                           }`}
                         >
-                          <div className="text-xs text-[var(--muted)] truncate">{o.name}</div>
+                          <div className="truncate text-xs text-[var(--muted)]">
+                            {o.name}
+                          </div>
                           <div className="font-semibold text-[var(--green)]">
                             {o.price.toFixed(2)}
                           </div>
@@ -158,7 +170,7 @@ export default function MatchDetailPage() {
             <strong>{picked.name}</strong> @ {picked.price.toFixed(2)}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Selection locked on screen. Place-bet (stake) comes next.
+            Selection only — place bet (stake) next step.
           </p>
           <button
             type="button"
@@ -170,5 +182,13 @@ export default function MatchDetailPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function MatchDetailPage() {
+  return (
+    <Suspense fallback={<main className="p-4 text-sm text-[var(--muted)]">Loading…</main>}>
+      <MatchInner />
+    </Suspense>
   );
 }

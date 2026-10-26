@@ -36,51 +36,51 @@ function mergeMarkets(ev: Event) {
       if (!byKey[m.key]) byKey[m.key] = [];
       for (const o of m.outcomes || []) {
         const label = o.point != null ? `${o.name} ${o.point}` : o.name;
+        const price = o.price;
+        if (price >= 100 || price < 1.01) continue;
         if (!byKey[m.key].some((x) => x.name === label)) {
-          byKey[m.key].push({ name: label, price: o.price });
+          byKey[m.key].push({ name: label, price });
         }
       }
     }
   }
-  return Object.entries(byKey).map(([key, outcomes]) => ({
-    key,
-    title: MARKET_TITLE[key] || key,
-    outcomes,
-  }));
+  return Object.entries(byKey)
+    .filter(([, outcomes]) => outcomes.length > 0)
+    .map(([key, outcomes]) => ({
+      key,
+      title: MARKET_TITLE[key] || key,
+      outcomes,
+    }));
 }
 
-async function fetchSport(
-  key: string,
+async function loadEvents(
+  apiKey: string,
   sport: string,
-  eventId?: string
-): Promise<Event | null> {
+  markets: string
+): Promise<Event[]> {
   const url = new URL(`https://api.the-odds-api.com/v4/sports/${sport}/odds`);
-  url.searchParams.set("apiKey", key);
+  url.searchParams.set("apiKey", apiKey);
   url.searchParams.set("regions", "uk,eu");
-  url.searchParams.set("markets", "h2h,totals,btts,spreads");
+  url.searchParams.set("markets", markets);
   url.searchParams.set("oddsFormat", "decimal");
-
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) return null;
-  const list = (await res.json()) as Event[];
-  if (!eventId) return list[0] || null;
-  return list.find((e) => e.id === eventId) || null;
+  const res = await fetch(url.toString(), { next: { revalidate: 45 } });
+  if (!res.ok) return [];
+  return (await res.json()) as Event[];
 }
 
 export async function GET(req: Request) {
   const apiKey = process.env.ODDS_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(
-      { error: "ODDS_API_KEY not set", markets: [] },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "ODDS_API_KEY not set", markets: [] }, { status: 500 });
   }
 
   const sp = new URL(req.url).searchParams;
-  const id = sp.get("id");
+  const id = decodeURIComponent(sp.get("id") || "");
   const sportHint = sp.get("sport") || "";
+  const homeQ = (sp.get("home") || "").toLowerCase();
+  const awayQ = (sp.get("away") || "").toLowerCase();
 
-  if (!id) {
+  if (!id && !homeQ) {
     return NextResponse.json({ error: "Missing id", markets: [] }, { status: 400 });
   }
 
@@ -91,8 +91,38 @@ export async function GET(req: Request) {
 
   for (const sport of order) {
     try {
-      const ev = await fetchSport(apiKey, sport, id);
+      // h2h first (most reliable on free tier), then richer markets
+      let list = await loadEvents(apiKey, sport, "h2h");
+      let ev =
+        list.find((e) => e.id === id) ||
+        list.find(
+          (e) =>
+            homeQ &&
+            awayQ &&
+            e.home_team.toLowerCase().includes(homeQ) &&
+            e.away_team.toLowerCase().includes(awayQ)
+        );
+
+      if (!ev) {
+        list = await loadEvents(apiKey, sport, "h2h,totals,btts,spreads");
+        ev =
+          list.find((e) => e.id === id) ||
+          list.find(
+            (e) =>
+              homeQ &&
+              awayQ &&
+              e.home_team.toLowerCase().includes(homeQ) &&
+              e.away_team.toLowerCase().includes(awayQ)
+          );
+      } else {
+        // try upgrade markets
+        const rich = await loadEvents(apiKey, sport, "h2h,totals,btts,spreads");
+        const richer = rich.find((e) => e.id === ev!.id);
+        if (richer) ev = richer;
+      }
+
       if (!ev) continue;
+
       return NextResponse.json({
         id: ev.id,
         sport_key: ev.sport_key || sport,
@@ -103,7 +133,7 @@ export async function GET(req: Request) {
         markets: mergeMarkets(ev),
       });
     } catch {
-      /* next */
+      /* next sport */
     }
   }
 
@@ -111,8 +141,8 @@ export async function GET(req: Request) {
     id,
     league: "",
     commence: "",
-    home: "",
-    away: "",
+    home: sp.get("home") || "",
+    away: sp.get("away") || "",
     markets: [],
     error: "Match not found or no odds right now",
   });
