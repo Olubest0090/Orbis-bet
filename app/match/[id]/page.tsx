@@ -48,7 +48,12 @@ function MatchInner() {
         if (awayQ) q.set("away", awayQ);
         const res = await fetch(`/api/odds/event?${q.toString()}`);
         const json = await res.json().catch(() => ({}));
-        if (!cancelled) setData(json);
+        if (!cancelled) {
+          setData(json);
+          if (json.markets?.[0]?.key) {
+            setOpen({ [json.markets[0].key]: true });
+          }
+        }
       } catch {
         if (!cancelled)
           setData({
@@ -74,8 +79,8 @@ function MatchInner() {
     try {
       return new Date(iso).toLocaleString(undefined, {
         weekday: "short",
-        month: "short",
         day: "numeric",
+        month: "short",
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -84,31 +89,32 @@ function MatchInner() {
     }
   }
 
+  const home = data?.home || homeQ || "Home";
+  const away = data?.away || awayQ || "Away";
+
   return (
-    <main className="min-h-screen p-4 pb-28 max-w-lg mx-auto">
-      <Link href="/" className="text-sm text-[var(--muted)]">
+    <main className="min-h-screen p-3 pb-28 max-w-lg mx-auto text-sm">
+      <Link href="/" className="text-xs text-[var(--muted)]">
         ← Back
       </Link>
 
-      {loading && <p className="mt-4 text-sm text-[var(--muted)]">Loading match…</p>}
+      {loading && <p className="mt-3 text-xs text-[var(--muted)]">Loading…</p>}
 
       {!loading && data && (
         <>
-          <p className="mt-3 text-xs text-[var(--muted)]">
+          <p className="mt-2 text-[11px] text-[var(--muted)] truncate">
             {data.league}
             {data.commence ? ` · ${fmtWhen(data.commence)}` : ""}
           </p>
-          <h1 className="mt-1 text-xl font-bold">
-            {data.home || homeQ || "Home"}{" "}
-            <span className="text-base font-normal text-[var(--muted)]">vs</span>{" "}
-            {data.away || awayQ || "Away"}
+          <h1 className="mt-0.5 text-sm font-semibold leading-tight truncate">
+            {home} <span className="font-normal text-[var(--muted)]">vs</span> {away}
           </h1>
 
           {data.error && (
-            <p className="mt-2 text-sm text-[var(--danger)]">{data.error}</p>
+            <p className="mt-2 text-xs text-[var(--danger)]">{data.error}</p>
           )}
 
-          <div className="mt-6 space-y-2">
+          <div className="mt-4 space-y-2">
             {(data.markets || []).map((m) => {
               const isOpen = open[m.key] ?? false;
               return (
@@ -118,14 +124,14 @@ function MatchInner() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium"
+                    className="flex w-full items-center justify-between px-3 py-2.5 text-left text-xs font-medium"
                     onClick={() => setOpen((s) => ({ ...s, [m.key]: !isOpen }))}
                   >
                     <span>{m.title}</span>
                     <span className="text-[var(--muted)]">{isOpen ? "▾" : "▸"}</span>
                   </button>
                   {isOpen && (
-                    <div className="grid grid-cols-2 gap-2 border-t border-[var(--border)] p-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-3 gap-1.5 border-t border-[var(--border)] p-2">
                       {m.outcomes.map((o) => (
                         <button
                           key={o.name}
@@ -137,16 +143,16 @@ function MatchInner() {
                               price: o.price,
                             })
                           }
-                          className={`rounded-lg border px-2 py-2 text-center ${
+                          className={`rounded-lg border px-1 py-1.5 text-center ${
                             picked?.name === o.name && picked?.market === m.title
                               ? "border-[var(--green)] bg-[var(--green)]/10"
                               : "border-[var(--border)] bg-[var(--bg)]"
                           }`}
                         >
-                          <div className="truncate text-xs text-[var(--muted)]">
+                          <div className="truncate text-[10px] text-[var(--muted)]">
                             {o.name}
                           </div>
-                          <div className="font-semibold text-[var(--green)]">
+                          <div className="text-xs font-semibold text-[var(--green)]">
                             {o.price.toFixed(2)}
                           </div>
                         </button>
@@ -157,24 +163,24 @@ function MatchInner() {
               );
             })}
             {!data.markets?.length && !data.error && (
-              <p className="text-sm text-[var(--muted)]">No markets for this match.</p>
+              <p className="text-xs text-[var(--muted)]">No markets for this match.</p>
             )}
           </div>
         </>
       )}
 
       {picked && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[var(--card)] p-4">
-          <p className="text-sm">
+        <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[var(--card)] p-3">
+          <p className="text-xs">
             <span className="text-[var(--muted)]">{picked.market}:</span>{" "}
             <strong>{picked.name}</strong> @ {picked.price.toFixed(2)}
           </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            Selection only — place bet (stake) next step.
+          <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+            Stake / place bet next
           </p>
           <button
             type="button"
-            className="mt-2 text-xs text-[var(--muted)] underline"
+            className="mt-1 text-[10px] text-[var(--muted)] underline"
             onClick={() => setPicked(null)}
           >
             Clear
@@ -187,7 +193,11 @@ function MatchInner() {
 
 export default function MatchDetailPage() {
   return (
-    <Suspense fallback={<main className="p-4 text-sm text-[var(--muted)]">Loading…</main>}>
+    <Suspense
+      fallback={
+        <main className="p-3 text-xs text-[var(--muted)]">Loading…</main>
+      }
+    >
       <MatchInner />
     </Suspense>
   );
