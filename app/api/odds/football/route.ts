@@ -22,25 +22,6 @@ type Event = {
   bookmakers: Bookmaker[];
 };
 
-function pickH2H(bookmakers: Bookmaker[]): { home?: number; draw?: number; away?: number } {
-  for (const b of bookmakers) {
-    const m = b.markets?.find((x) => x.key === "h2h");
-    if (!m?.outcomes?.length) continue;
-    const home = m.outcomes.find((o) => o.name !== "Draw" && o.name === b.markets[0] ? false : true);
-    // Map by team names later — here outcomes are home team, away team, Draw
-    let h: number | undefined;
-    let d: number | undefined;
-    let a: number | undefined;
-    for (const o of m.outcomes) {
-      if (o.name === "Draw") d = o.price;
-      else if (h === undefined) h = o.price;
-      else a = o.price;
-    }
-    if (h != null && a != null) return { home: h, draw: d, away: a };
-  }
-  return {};
-}
-
 function h2hForEvent(ev: Event): { home?: number; draw?: number; away?: number } {
   for (const b of ev.bookmakers || []) {
     const m = b.markets?.find((x) => x.key === "h2h");
