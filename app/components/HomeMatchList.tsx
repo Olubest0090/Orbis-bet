@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Match = {
   id: string;
+  sport_key?: string;
   league: string;
   commence: string;
   home: string;
@@ -13,6 +14,7 @@ type Match = {
 };
 
 export default function HomeMatchList() {
+  const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,11 @@ export default function HomeMatchList() {
     }
   }
 
+  function openMatch(m: Match) {
+    const q = m.sport_key ? `?sport=${encodeURIComponent(m.sport_key)}` : "";
+    router.push(`/match/${encodeURIComponent(m.id)}${q}`);
+  }
+
   if (loading) {
     return <p className="px-4 text-sm text-[var(--muted)]">Loading matches…</p>;
   }
@@ -69,10 +76,15 @@ export default function HomeMatchList() {
     <div className="space-y-3 px-4">
       {error && <p className="text-xs text-[var(--muted)]">{error}</p>}
       {matches.map((m) => (
-        <Link
+        <div
           key={m.id}
-          href={`/match/${encodeURIComponent(m.id)}`}
-          className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 active:opacity-90"
+          role="button"
+          tabIndex={0}
+          onClick={() => openMatch(m)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") openMatch(m);
+          }}
+          className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 active:opacity-90 cursor-pointer"
         >
           <p className="text-xs text-[var(--muted)]">
             {m.league} · {fmtWhen(m.commence)}
@@ -90,18 +102,23 @@ export default function HomeMatchList() {
                 ["2", m.odds.away],
               ] as const
             ).map(([label, price]) => (
-              <div
+              <button
                 key={label}
+                type="button"
                 className="rounded-lg border border-[var(--border)] bg-[var(--bg)] py-2 text-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openMatch(m);
+                }}
               >
                 <div className="text-xs text-[var(--muted)]">{label}</div>
                 <div className="font-semibold text-[var(--green)]">
                   {price != null ? price.toFixed(2) : "—"}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-        </Link>
+        </div>
       ))}
       {!loading && matches.length === 0 && (
         <p className="text-sm text-[var(--muted)]">No fixtures right now.</p>

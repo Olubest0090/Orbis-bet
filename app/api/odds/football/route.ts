@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
-/** Soccer sport keys on The Odds API (h2h = 1X2). */
 const SPORTS = [
   "soccer_epl",
   "soccer_spain_la_liga",
   "soccer_italy_serie_a",
   "soccer_germany_bundesliga",
   "soccer_uefa_champs_league",
+  "soccer_france_ligue_one",
 ] as const;
 
 type Outcome = { name: string; price: number };
 type Market = { key: string; outcomes: Outcome[] };
-type Bookmaker = { key: string; title: string; markets: Market[] };
+type Bookmaker = { markets: Market[] };
 type Event = {
   id: string;
   sport_key: string;
@@ -42,28 +42,23 @@ function h2hForEvent(ev: Event): { home?: number; draw?: number; away?: number }
 export async function GET() {
   const key = process.env.ODDS_API_KEY;
   if (!key) {
-    return NextResponse.json(
-      { error: "ODDS_API_KEY not set on server" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "ODDS_API_KEY not set on server" }, { status: 500 });
   }
 
   const matches: Array<{
     id: string;
+    sport_key: string;
     league: string;
     commence: string;
     home: string;
     away: string;
     odds: { home?: number; draw?: number; away?: number };
   }> = [];
-
   const errors: string[] = [];
 
   for (const sport of SPORTS) {
     try {
-      const url = new URL(
-        `https://api.the-odds-api.com/v4/sports/${sport}/odds`
-      );
+      const url = new URL(`https://api.the-odds-api.com/v4/sports/${sport}/odds`);
       url.searchParams.set("apiKey", key);
       url.searchParams.set("regions", "uk,eu");
       url.searchParams.set("markets", "h2h");
@@ -72,13 +67,14 @@ export async function GET() {
       const res = await fetch(url.toString(), { next: { revalidate: 120 } });
       if (!res.ok) {
         const t = await res.text();
-        errors.push(`${sport}: ${res.status} ${t.slice(0, 120)}`);
+        errors.push(`${sport}: ${res.status} ${t.slice(0, 100)}`);
         continue;
       }
       const data = (await res.json()) as Event[];
-      for (const ev of data.slice(0, 8)) {
+      for (const ev of data.slice(0, 10)) {
         matches.push({
           id: ev.id,
+          sport_key: ev.sport_key || sport,
           league: ev.sport_title || sport,
           commence: ev.commence_time,
           home: ev.home_team,
@@ -91,12 +87,10 @@ export async function GET() {
     }
   }
 
-  matches.sort(
-    (a, b) => new Date(a.commence).getTime() - new Date(b.commence).getTime()
-  );
+  matches.sort((a, b) => new Date(a.commence).getTime() - new Date(b.commence).getTime());
 
   return NextResponse.json({
-    matches: matches.slice(0, 40),
+    matches: matches.slice(0, 50),
     errors: errors.length ? errors : undefined,
   });
 }
