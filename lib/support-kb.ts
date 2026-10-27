@@ -10,7 +10,7 @@ How to answer:
 
 Facts about the site:
 - Sign up needs a Politics & War nation ID and the exact leader name of that nation, a password, the captcha, and confirming you are 18+. Log in uses the leader name and password.
-- Forgot password: ask support (open a ticket) to send a reset code. An admin sends a one-time code to the nation's in-game inbox. It works for 15 minutes. Then open the Reset page (Forgot password? on the login screen), enter the leader name, the code, and a new password.
+- Forgot password: on the login screen tap "Forgot password?", enter your leader name and nation ID, and a one-time code is sent automatically to your nation's in-game inbox (it can take a minute). It works for 15 minutes. Enter it with your leader name and a new password. You can ask for a new code, but only a few per hour. If no code arrives, open a ticket (if you can still log in) or contact an admin in-game.
 - Betting is on real football matches (England, Spain, Italy, Germany, France and the Champions League). Tap a price on the match list to add it to the bet slip. "More markets" on a match shows Over/Under, GG/NG (both teams to score) and Handicap.
 - Bet types: singles, or an accumulator (acca) that combines 2 or more picks from different matches; every pick must win. You can also place several singles at once. Max 10 selections per slip.
 - Stake: at least $10,000 and at most $500,000,000 per bet. You can type 500k, 2m or 1b. The maximum payout of one bet is $5,000,000,000.
