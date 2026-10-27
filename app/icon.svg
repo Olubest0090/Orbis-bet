@@ -1,7 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs>
-<rect width="64" height="64" rx="16" fill="#070b1f"/>
-<circle cx="32" cy="32" r="14" fill="none" stroke="url(#g)" stroke-width="5"/>
-<ellipse cx="32" cy="32" rx="26" ry="9.5" transform="rotate(-28 32 32)" fill="none" stroke="url(#g)" stroke-width="3" opacity=".8"/>
-<circle cx="50" cy="19" r="4.5" fill="#fbbf24"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="ringi" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#818cf8"/></linearGradient>
+<radialGradient id="balli" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#cfe0ff"/><stop offset="1" stop-color="#6f7fe8"/></radialGradient>
+<linearGradient id="patchi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#101a4a"/><stop offset="1" stop-color="#070c26"/></linearGradient>
+<filter id="glowi" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="14"/></filter>
+<linearGradient id="wordi" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a5b4fc"/></linearGradient>
+<radialGradient id="bgi" cx="0.2" cy="0.1" r="1.1"><stop offset="0" stop-color="#1b2a7a"/><stop offset="0.55" stop-color="#0a1030"/><stop offset="1" stop-color="#04061a"/></radialGradient><radialGradient id="bgc" cx="0.9" cy="0.95" r="0.7"><stop offset="0" stop-color="#06b6d4" stop-opacity="0.45"/><stop offset="1" stop-color="#06b6d4" stop-opacity="0"/></radialGradient></defs>
+<rect width="512" height="512" rx="113" fill="url(#bgi)"/>
+<rect width="512" height="512" rx="113" fill="url(#bgc)"/>
+<circle cx="311" cy="365" r="1.4" fill="#dbeafe" opacity="0.67"/>
+<circle cx="364" cy="446" r="0.8" fill="#dbeafe" opacity="0.63"/>
+<circle cx="380" cy="143" r="0.8" fill="#dbeafe" opacity="0.66"/>
+<circle cx="82" cy="242" r="0.8" fill="#dbeafe" opacity="0.42"/>
+<circle cx="77" cy="143" r="1.4" fill="#dbeafe" opacity="0.35"/>
+<circle cx="157" cy="444" r="1.0" fill="#dbeafe" opacity="0.32"/>
+<circle cx="390" cy="93" r="1.4" fill="#dbeafe" opacity="0.45"/>
+<circle cx="90" cy="469" r="0.8" fill="#dbeafe" opacity="0.34"/>
+<circle cx="128" cy="473" r="0.8" fill="#dbeafe" opacity="0.38"/>
+<circle cx="464" cy="274" r="1.4" fill="#dbeafe" opacity="0.53"/>
+<circle cx="113" cy="467" r="0.8" fill="#dbeafe" opacity="0.68"/>
+<circle cx="433" cy="165" r="1.0" fill="#dbeafe" opacity="0.44"/>
+<circle cx="452" cy="150" r="1.0" fill="#dbeafe" opacity="0.39"/>
+<circle cx="302" cy="32" r="1.4" fill="#dbeafe" opacity="0.57"/>
+<circle cx="60" cy="191" r="1.0" fill="#dbeafe" opacity="0.47"/>
+<circle cx="173" cy="248" r="1.4" fill="#dbeafe" opacity="0.33"/>
+<circle cx="146" cy="454" r="1.4" fill="#dbeafe" opacity="0.41"/>
+<circle cx="213" cy="278" r="1.0" fill="#dbeafe" opacity="0.41"/>
+<circle cx="291" cy="35" r="0.8" fill="#dbeafe" opacity="0.57"/>
+<circle cx="312" cy="461" r="0.8" fill="#dbeafe" opacity="0.59"/>
+<circle cx="450" cy="455" r="1.0" fill="#dbeafe" opacity="0.48"/>
+<circle cx="433" cy="144" r="1.0" fill="#dbeafe" opacity="0.30"/>
+<circle cx="368" cy="390" r="1.0" fill="#dbeafe" opacity="0.27"/>
+<circle cx="457" cy="72" r="1.0" fill="#dbeafe" opacity="0.48"/>
+<circle cx="194" cy="97" r="1.0" fill="#dbeafe" opacity="0.67"/>
+<circle cx="276" cy="171" r="1.0" fill="#dbeafe" opacity="0.39"/>
+<filter id="gli" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="40"/></filter>
+<circle cx="256.0" cy="256.0" r="148" fill="#6366f1" opacity="0.30" filter="url(#gli)"/>
+<circle cx="315" cy="327" r="107" fill="#06b6d4" opacity="0.22" filter="url(#gli)"/>
+<g transform="translate(256.0 256.0) rotate(-24)" fill="none" stroke="url(#ringi)" stroke-linecap="round">
+<path d="M -207.9 0 A 207.9 65.3 0 0 1 207.9 0" stroke-width="7.7" opacity="0.9"/>
+</g>
+<circle cx="389.3" cy="152.6" r="22.6" fill="#fbbf24" opacity="0.55" filter="url(#glowi)"/>
+<circle cx="389.3" cy="152.6" r="10.1" fill="#fbbf24"/>
+<circle cx="386.3" cy="149.1" r="3.6" fill="#fff" opacity="0.8"/>
+<clipPath id="clipi"><circle cx="256.0" cy="256.0" r="118.784"/></clipPath>
+<circle cx="256.0" cy="256.0" r="118.784" fill="url(#balli)"/>
+<g clip-path="url(#clipi)">
+<polygon points="256.0,220.4 289.9,245.0 276.9,284.8 235.1,284.8 222.1,245.0" fill="url(#patchi)"/>
+<line x1="256.0" y1="220.4" x2="256.0" y2="182.4" stroke="#0b1236" stroke-width="4.2" stroke-linecap="round" opacity="0.85"/>
+<polygon points="256.0,183.5 217.6,155.6 232.3,110.5 279.7,110.5 294.4,155.6" fill="url(#patchi)"/>
+<line x1="299.3" y1="196.4" x2="329.3" y2="155.1" stroke="#0b1236" stroke-width="3.6" stroke-linecap="round" opacity="0.7"/>
+<line x1="289.9" y1="245.0" x2="326.0" y2="233.2" stroke="#0b1236" stroke-width="4.2" stroke-linecap="round" opacity="0.85"/>
+<polygon points="324.9,233.6 339.6,188.5 387.1,188.5 401.7,233.6 363.3,261.5" fill="url(#patchi)"/>
+<line x1="326.0" y1="278.8" x2="374.6" y2="294.5" stroke="#0b1236" stroke-width="3.6" stroke-linecap="round" opacity="0.7"/>
+<line x1="276.9" y1="284.8" x2="299.3" y2="315.6" stroke="#0b1236" stroke-width="4.2" stroke-linecap="round" opacity="0.85"/>
+<polygon points="298.6,314.6 346.1,314.6 360.7,359.8 322.3,387.7 283.9,359.8" fill="url(#patchi)"/>
+<line x1="256.0" y1="329.6" x2="256.0" y2="380.7" stroke="#0b1236" stroke-width="3.6" stroke-linecap="round" opacity="0.7"/>
+<line x1="235.1" y1="284.8" x2="212.7" y2="315.6" stroke="#0b1236" stroke-width="4.2" stroke-linecap="round" opacity="0.85"/>
+<polygon points="213.4,314.6 228.1,359.8 189.7,387.7 151.3,359.8 165.9,314.6" fill="url(#patchi)"/>
+<line x1="186.0" y1="278.8" x2="137.4" y2="294.5" stroke="#0b1236" stroke-width="3.6" stroke-linecap="round" opacity="0.7"/>
+<line x1="222.1" y1="245.0" x2="186.0" y2="233.2" stroke="#0b1236" stroke-width="4.2" stroke-linecap="round" opacity="0.85"/>
+<polygon points="187.1,233.6 148.7,261.5 110.3,233.6 124.9,188.5 172.4,188.5" fill="url(#patchi)"/>
+<line x1="212.7" y1="196.4" x2="182.7" y2="155.1" stroke="#0b1236" stroke-width="3.6" stroke-linecap="round" opacity="0.7"/>
+<radialGradient id="glossi" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<ellipse cx="210.9" cy="201.4" rx="59.4" ry="40.4" fill="url(#glossi)" transform="rotate(-35 210.9 201.4)"/>
+</g>
+<circle cx="256.0" cy="256.0" r="118.784" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="2.4"/>
+<g transform="translate(256.0 256.0) rotate(-24)" fill="none" stroke="url(#ringi)" stroke-linecap="round">
+<path d="M -207.9 0 A 207.9 65.3 0 0 0 207.9 0" stroke-width="8.9"/>
+</g>
 </svg>
