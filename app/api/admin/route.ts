@@ -3,6 +3,10 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, friendlyError } from "@/lib/admin";
 import { settleOpenBets } from "@/lib/settle";
 import { parseAmount } from "@/lib/betting";
+import { sendPnwMessage } from "@/lib/pnw";
+import { hashCode, makeCode, prettyCode } from "@/lib/resetcode";
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://orbis-bet.vercel.app";
 
 export const dynamic = "force-dynamic";
 
@@ -185,6 +189,69 @@ export async function POST(req: Request) {
       .eq("id", ticketId);
     if (upErr) return NextResponse.json({ error: "Could not update ticket" }, { status: 500 });
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "send_reset_code") {
+    const userId = String(body.userId || "");
+    if (!UUID.test(userId)) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+
+    const { data: target } = await db
+      .from("orbis_users")
+      .select("id, nation_id, leader_name, status, is_admin")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!target || target.status === "deleted") {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+    if (target.is_admin) {
+      return NextResponse.json({ error: "You can't reset another admin's password here" }, { status: 400 });
+    }
+
+    const { data: last } = await db
+      .from("orbis_reset_codes")
+      .select("created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (last && Date.now() - new Date(last.created_at).getTime() < 2 * 60 * 1000) {
+      return NextResponse.json({ error: "A code was just sent. Wait 2 minutes before sending another." }, { status: 429 });
+    }
+
+    const code = makeCode();
+    const { data: row, error: insErr } = await db
+      .from("orbis_reset_codes")
+      .insert({
+        user_id: userId,
+        code_hash: hashCode(userId, code),
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      })
+      .select("id")
+      .single();
+    if (insErr || !row) return NextResponse.json({ error: "Could not create a code" }, { status: 500 });
+
+    try {
+      await sendPnwMessage(
+        target.nation_id,
+        "Orbis Bet password reset",
+        `<p>Your Orbis Bet password reset code is <b>${prettyCode(code)}</b>.</p>` +
+          `<p>It expires in 15 minutes. Open ${SITE}/reset and enter it with your leader name and a new password.</p>` +
+          `<p>If you did not ask for this, ignore this message.</p>`
+      );
+    } catch (e) {
+      await db.from("orbis_reset_codes").delete().eq("id", row.id);
+      console.error("reset message failed:", e);
+      const why = e instanceof Error ? e.message : "unknown error";
+      return NextResponse.json({ error: `Could not send the in-game message: ${why}` }, { status: 502 });
+    }
+
+    await db.from("orbis_admin_log").insert({
+      admin_id: admin.id,
+      action: "password_reset_code",
+      target_user: userId,
+      details: { nation_id: target.nation_id },
+    });
+    return NextResponse.json({ ok: true, nation_id: target.nation_id });
   }
 
   if (action === "settle_now") {

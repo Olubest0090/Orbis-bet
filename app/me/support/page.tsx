@@ -20,6 +20,10 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [chat, setChat] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatText, setChatText] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatErr, setChatErr] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -60,6 +64,33 @@ export default function SupportPage() {
       if (payload.action === "create" && json.id) setActive(json.id);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function ask() {
+    const q = chatText.trim();
+    if (!q || chatBusy) return;
+    const next = [...chat, { role: "user" as const, content: q }];
+    setChat(next);
+    setChatText("");
+    setChatErr("");
+    setChatBusy(true);
+    try {
+      const res = await fetch("/api/support/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setChatErr(json.error || "The assistant couldn't answer. Please open a ticket.");
+        return;
+      }
+      setChat([...next, { role: "assistant" as const, content: json.reply }]);
+    } catch {
+      setChatErr("Network error");
+    } finally {
+      setChatBusy(false);
     }
   }
 
@@ -122,6 +153,49 @@ export default function SupportPage() {
         </div>
       ) : (
         <>
+          <div className="mb-4 rounded-xl border border-[var(--green)] bg-[var(--card)] p-3">
+            <h2 className="font-semibold">Ask our assistant</h2>
+            <p className="mb-2 text-[11px] text-[var(--muted)]">
+              Instant answers, any time. It can&apos;t change your account. For that, open a ticket below.
+            </p>
+            {chat.length > 0 && (
+              <div className="mb-2 max-h-72 space-y-2 overflow-y-auto">
+                {chat.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`max-w-[90%] whitespace-pre-wrap break-words rounded-xl border p-2.5 text-xs ${
+                      m.role === "assistant"
+                        ? "border-[var(--green)] bg-[var(--bg)]"
+                        : "ml-auto border-[var(--border)] bg-[var(--bg)]"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                ))}
+                {chatBusy && <p className="text-xs text-[var(--muted)]">Thinking…</p>}
+              </div>
+            )}
+            {chatErr && <p className="mb-2 text-xs text-[var(--danger)]">{chatErr}</p>}
+            <div className="flex gap-2">
+              <input
+                value={chatText}
+                onChange={(e) => setChatText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void ask()}
+                maxLength={600}
+                placeholder="e.g. How do accumulators work?"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none focus:border-[var(--green)]"
+              />
+              <button
+                type="button"
+                disabled={chatBusy || !chatText.trim()}
+                onClick={() => void ask()}
+                className="shrink-0 rounded-lg bg-[var(--green)] px-3 text-sm font-semibold text-black disabled:opacity-60"
+              >
+                Ask
+              </button>
+            </div>
+          </div>
+
           <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3">
             <h2 className="mb-2 font-semibold">New ticket</h2>
             <input

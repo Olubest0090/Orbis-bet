@@ -193,6 +193,22 @@ export default function AdminDashboard() {
     void run({ action: "status", userId: u.id, status, reason }, () => loadUsers(q), "Account updated");
   }
 
+  async function resetPassword(u: User) {
+    if (
+      !window.confirm(
+        `Send a one-time reset code to ${u.leader_name} (Nation #${u.nation_id}) as an in-game message?\n\nOnly they can read it in their game inbox.`
+      )
+    )
+      return;
+    setMsg("Sending…");
+    try {
+      const r = await post({ action: "send_reset_code", userId: u.id });
+      setMsg(`Code sent in-game to Nation #${r.nation_id}. It works for 15 minutes at /reset.`);
+    } catch (e) {
+      fail(e);
+    }
+  }
+
   function resolve(b: Bet, result: "won" | "lost" | "void") {
     const text =
       result === "void"
@@ -342,42 +358,47 @@ export default function AdminDashboard() {
                   <span>Balance {money(u.balance)}</span>
                   <span className="text-[var(--muted)]">Shares {Number(u.shares)}</span>
                 </div>
-                {!u.is_admin && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button type="button" className={btn} onClick={() => adjust(u)}>
-                      +/− Balance
-                    </button>
-                    <button
-                      type="button"
-                      className={btn}
-                      onClick={() => {
-                        setBetUser({ id: u.id, name: u.leader_name });
-                        setTab("bets");
-                      }}
-                    >
-                      Bets
-                    </button>
-                    {u.status === "active" && (
-                      <button type="button" className={btn} onClick={() => setStatus(u, "frozen")}>
-                        Freeze
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" className={btn} onClick={() => adjust(u)}>
+                    +/− Balance
+                  </button>
+                  <button
+                    type="button"
+                    className={btn}
+                    onClick={() => {
+                      setBetUser({ id: u.id, name: u.leader_name });
+                      setTab("bets");
+                    }}
+                  >
+                    Bets
+                  </button>
+                  {!u.is_admin && (
+                    <>
+                      <button type="button" className={btn} onClick={() => resetPassword(u)}>
+                        Reset password
                       </button>
-                    )}
-                    {u.status === "frozen" && (
-                      <button type="button" className={btn} onClick={() => setStatus(u, "active")}>
-                        Unfreeze
-                      </button>
-                    )}
-                    {u.status !== "deleted" ? (
-                      <button type="button" className={`${btn} text-[var(--danger)]`} onClick={() => setStatus(u, "deleted")}>
-                        Delete
-                      </button>
-                    ) : (
-                      <button type="button" className={btn} onClick={() => setStatus(u, "active")}>
-                        Restore
-                      </button>
-                    )}
-                  </div>
-                )}
+                      {u.status === "active" && (
+                        <button type="button" className={btn} onClick={() => setStatus(u, "frozen")}>
+                          Freeze
+                        </button>
+                      )}
+                      {u.status === "frozen" && (
+                        <button type="button" className={btn} onClick={() => setStatus(u, "active")}>
+                          Unfreeze
+                        </button>
+                      )}
+                      {u.status !== "deleted" ? (
+                        <button type="button" className={`${btn} text-[var(--danger)]`} onClick={() => setStatus(u, "deleted")}>
+                          Delete
+                        </button>
+                      ) : (
+                        <button type="button" className={btn} onClick={() => setStatus(u, "active")}>
+                          Restore
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>

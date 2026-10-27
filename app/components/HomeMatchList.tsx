@@ -12,10 +12,6 @@ type Match = {
   home: string;
   away: string;
   odds: { home?: number; draw?: number; away?: number };
-  score_home?: string;
-  score_away?: string;
-  live?: boolean;
-  completed?: boolean;
 };
 
 export default function HomeMatchList() {
@@ -95,16 +91,16 @@ export default function HomeMatchList() {
       {matches.map((m) => {
         const hasOdds =
           m.odds.home != null || m.odds.draw != null || m.odds.away != null;
-        const started = !!m.live || new Date(m.commence).getTime() <= Date.now();
+        const started = new Date(m.commence).getTime() <= Date.now();
         return (
           <div
             key={m.id}
             className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4"
           >
             <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-              {m.live && (
-                <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                  LIVE
+              {started && (
+                <span className="rounded border border-[var(--border)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">
+                  STARTED
                 </span>
               )}
               <span>
@@ -113,13 +109,7 @@ export default function HomeMatchList() {
             </div>
             <div className="mt-2 flex items-center justify-between gap-2 text-sm font-medium">
               <span className="flex-1 text-left">{m.home}</span>
-              {m.score_home != null && m.score_away != null ? (
-                <span className="font-bold text-[var(--green)]">
-                  {m.score_home} - {m.score_away}
-                </span>
-              ) : (
-                <span className="text-xs text-[var(--muted)]">vs</span>
-              )}
+              <span className="text-xs text-[var(--muted)]">vs</span>
               <span className="flex-1 text-right">{m.away}</span>
             </div>
             {hasOdds ? (
@@ -156,7 +146,7 @@ export default function HomeMatchList() {
               </div>
             ) : (
               <p className="mt-2 text-xs text-[var(--muted)]">
-                Odds unavailable (live/suspended)
+                Odds unavailable right now
               </p>
             )}
             {!started && (

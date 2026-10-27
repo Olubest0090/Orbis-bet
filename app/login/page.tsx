@@ -90,6 +90,8 @@ export default function LoginPage() {
         </form>
         <p className="mt-5 text-center text-sm text-[var(--muted)]">
           No account? <Link href="/signup" className="text-[var(--green)]">Sign up</Link>
+          {" · "}
+          <Link href="/reset" className="text-[var(--green)]">Forgot password?</Link>
         </p>
         <p className="mt-3 text-center text-xs text-[var(--muted)]">18+ · In-game only · Bet responsibly</p>
       </div>
