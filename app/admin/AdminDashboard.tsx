@@ -13,6 +13,7 @@ type Stats = {
   open_stake: number;
   open_exposure: number;
   open_tickets: number;
+  betting_capital: number;
 };
 type User = {
   id: string;
@@ -302,6 +303,7 @@ export default function AdminDashboard() {
                   ["Open bets", stats.open_bets],
                   ["Open stakes", money(stats.open_stake)],
                   ["Max payout owed", money(stats.open_exposure)],
+                  ["Betting capital", money(stats.betting_capital)],
                   ["Open tickets", stats.open_tickets],
                 ] as [string, string | number][]
               ).map(([label, v]) => (

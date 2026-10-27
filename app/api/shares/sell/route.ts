@@ -17,79 +17,50 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
-  if (quantity < 1) {
+  if (!Number.isFinite(quantity) || quantity < 1) {
     return NextResponse.json({ error: "Minimum sell is 1 share" }, { status: 400 });
   }
-
-  const db = supabaseAdmin();
-
-  const { data: state, error: stateErr } = await db
-    .from("orbis_share_state")
-    .select("*")
-    .eq("id", 1)
-    .single();
-  if (stateErr || !state) {
-    return NextResponse.json(
-      { error: "Share market not initialized. Run SQL share_state.sql in Supabase." },
-      { status: 500 }
-    );
+  if (quantity > 20_000) {
+    return NextResponse.json({ error: "That is more than the total shares" }, { status: 400 });
   }
 
-  const price = Math.max(FLOOR, Number(state.current_price));
-  const credit = Math.floor(quantity * price * 0.9);
+  const { data, error } = await supabaseAdmin().rpc("sell_shares", {
+    p_user: userId,
+    p_qty: quantity,
+    p_floor: FLOOR,
+  });
 
-  const { data: user, error: userErr } = await db
-    .from("orbis_users")
-    .select("balance, shares")
-    .eq("id", userId)
-    .single();
-  if (userErr || !user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const held = Number(user.shares);
-  if (held < quantity) {
-    return NextResponse.json(
-      { error: `You only have ${held.toLocaleString()} share(s)` },
-      { status: 400 }
-    );
-  }
-
-  const newBalance = Number(user.balance) + credit;
-  const newShares = held - quantity;
-  const newForSale = Number(state.shares_for_sale) + quantity;
-
-  const { error: uErr } = await db
-    .from("orbis_users")
-    .update({ balance: newBalance, shares: newShares })
-    .eq("id", userId)
-    .gte("shares", quantity);
-  if (uErr) {
-    return NextResponse.json({ error: uErr.message }, { status: 500 });
-  }
-
-  const { error: sErr } = await db
-    .from("orbis_share_state")
-    .update({
-      shares_for_sale: newForSale,
-      current_price: price,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", 1);
-  if (sErr) {
-    await db
-      .from("orbis_users")
-      .update({ balance: user.balance, shares: held })
-      .eq("id", userId);
-    return NextResponse.json({ error: sErr.message }, { status: 500 });
+  if (error) {
+    const m = error.message;
+    const held = /not_enough_held:([\d.]+)/.exec(m);
+    if (held) {
+      return NextResponse.json(
+        { error: `You only have ${Number(held[1]).toLocaleString()} share(s)` },
+        { status: 400 }
+      );
+    }
+    if (m.includes("account_frozen")) {
+      return NextResponse.json({ error: "Your account is frozen. Contact customer service." }, { status: 403 });
+    }
+    if (m.includes("capital_insufficient")) {
+      return NextResponse.json(
+        { error: "The share market can't buy that many back right now. Open a ticket." },
+        { status: 400 }
+      );
+    }
+    if (m.includes("bad_quantity")) {
+      return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
+    }
+    console.error("sell_shares failed:", m);
+    return NextResponse.json({ error: "Could not sell shares" }, { status: 500 });
   }
 
   return NextResponse.json({
     ok: true,
-    message: `Sold ${quantity} share(s) for $${credit.toLocaleString()} (after 10%)`,
-    balance: newBalance,
-    yourShares: newShares,
-    sharesForSale: newForSale,
-    currentPrice: price,
+    message: `Sold ${quantity} share(s) for $${Number(data.credit).toLocaleString()} (after 10%)`,
+    balance: Number(data.balance),
+    yourShares: Number(data.shares),
+    sharesForSale: Number(data.for_sale),
+    currentPrice: Number(data.price),
   });
 }
