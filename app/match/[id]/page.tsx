@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import SlipBar from "@/app/components/SlipBar";
+import { useSlip, type SlipLeg } from "@/lib/slip";
 
 type MarketRow = {
   key: string;
@@ -12,6 +14,7 @@ type MarketRow = {
 
 type EventDetail = {
   id: string;
+  sport_key?: string;
   league: string;
   commence: string;
   home: string;
@@ -30,11 +33,7 @@ function MatchInner() {
   const [data, setData] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({ h2h: true });
-  const [picked, setPicked] = useState<{
-    market: string;
-    name: string;
-    price: number;
-  } | null>(null);
+  const { toggle, has } = useSlip();
 
   useEffect(() => {
     if (!id) return;
@@ -92,8 +91,22 @@ function MatchInner() {
   const home = data?.home || homeQ || "Home";
   const away = data?.away || awayQ || "Away";
 
+  function legFor(m: MarketRow, o: { name: string; price: number }): SlipLeg {
+    return {
+      eventId: data?.id || id,
+      sport: data?.sport_key || sport,
+      home,
+      away,
+      commence: data?.commence || "",
+      marketKey: m.key,
+      marketTitle: m.title,
+      selection: o.name,
+      price: o.price,
+    };
+  }
+
   return (
-    <main className="min-h-screen p-3 pb-28 max-w-lg mx-auto text-sm">
+    <main className="min-h-screen p-3 pb-32 max-w-lg mx-auto text-sm">
       <Link href="/" className="text-xs text-[var(--muted)]">
         ← Back
       </Link>
@@ -132,31 +145,28 @@ function MatchInner() {
                   </button>
                   {isOpen && (
                     <div className="grid grid-cols-3 gap-1.5 border-t border-[var(--border)] p-2">
-                      {m.outcomes.map((o) => (
-                        <button
-                          key={o.name}
-                          type="button"
-                          onClick={() =>
-                            setPicked({
-                              market: m.title,
-                              name: o.name,
-                              price: o.price,
-                            })
-                          }
-                          className={`rounded-lg border px-1 py-1.5 text-center ${
-                            picked?.name === o.name && picked?.market === m.title
-                              ? "border-[var(--green)] bg-[var(--green)]/10"
-                              : "border-[var(--border)] bg-[var(--bg)]"
-                          }`}
-                        >
-                          <div className="truncate text-[10px] text-[var(--muted)]">
-                            {o.name}
-                          </div>
-                          <div className="text-xs font-semibold text-[var(--green)]">
-                            {o.price.toFixed(2)}
-                          </div>
-                        </button>
-                      ))}
+                      {m.outcomes.map((o) => {
+                        const leg = legFor(m, o);
+                        return (
+                          <button
+                            key={o.name}
+                            type="button"
+                            onClick={() => toggle(leg)}
+                            className={`rounded-lg border px-1 py-1.5 text-center ${
+                              has(leg)
+                                ? "border-[var(--green)] bg-[var(--green)]/10"
+                                : "border-[var(--border)] bg-[var(--bg)]"
+                            }`}
+                          >
+                            <div className="truncate text-[10px] text-[var(--muted)]">
+                              {o.name}
+                            </div>
+                            <div className="text-xs font-semibold text-[var(--green)]">
+                              {o.price.toFixed(2)}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -169,24 +179,7 @@ function MatchInner() {
         </>
       )}
 
-      {picked && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[var(--card)] p-3">
-          <p className="text-xs">
-            <span className="text-[var(--muted)]">{picked.market}:</span>{" "}
-            <strong>{picked.name}</strong> @ {picked.price.toFixed(2)}
-          </p>
-          <p className="mt-0.5 text-[10px] text-[var(--muted)]">
-            Stake / place bet next
-          </p>
-          <button
-            type="button"
-            className="mt-1 text-[10px] text-[var(--muted)] underline"
-            onClick={() => setPicked(null)}
-          >
-            Clear
-          </button>
-        </div>
-      )}
+      <SlipBar />
     </main>
   );
 }

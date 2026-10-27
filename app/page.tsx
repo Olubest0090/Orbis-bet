@@ -52,7 +52,7 @@ export default async function HomePage() {
           Live
         </a>
         <a
-          href="/me"
+          href="/bets"
           className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5"
         >
           My Bets

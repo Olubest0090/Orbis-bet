@@ -1,75 +1,5 @@
 import { NextResponse } from "next/server";
-
-const SPORTS = [
-  "soccer_epl",
-  "soccer_spain_la_liga",
-  "soccer_italy_serie_a",
-  "soccer_germany_bundesliga",
-  "soccer_uefa_champs_league",
-  "soccer_france_ligue_one",
-] as const;
-
-const MARKET_TITLE: Record<string, string> = {
-  h2h: "1X2",
-  totals: "Over / Under",
-  btts: "GG / NG",
-  spreads: "Handicap",
-  h2h_q1: "1st half 1X2",
-  totals_h1: "1st half O/U",
-};
-
-/** Markets we show (skip exchange lay etc.) */
-const ALLOW = new Set(["h2h", "totals", "btts", "spreads", "h2h_q1", "totals_h1"]);
-
-type Outcome = { name: string; price: number; point?: number };
-type Market = { key: string; outcomes: Outcome[] };
-type Bookmaker = { markets: Market[] };
-type Event = {
-  id: string;
-  sport_key: string;
-  sport_title: string;
-  commence_time: string;
-  home_team: string;
-  away_team: string;
-  bookmakers: Bookmaker[];
-};
-
-function mergeMarkets(ev: Event) {
-  const byKey: Record<string, { name: string; price: number }[]> = {};
-  for (const b of ev.bookmakers || []) {
-    for (const m of b.markets || []) {
-      if (!ALLOW.has(m.key)) continue;
-      if (!byKey[m.key]) byKey[m.key] = [];
-      for (const o of m.outcomes || []) {
-        const label = o.point != null ? `${o.name} ${o.point}` : o.name;
-        const price = o.price;
-        if (price >= 100 || price < 1.01) continue;
-        if (!byKey[m.key].some((x) => x.name === label)) {
-          byKey[m.key].push({ name: label, price });
-        }
-      }
-    }
-  }
-  const order = ["h2h", "totals", "btts", "spreads", "h2h_q1", "totals_h1"];
-  return order
-    .filter((k) => byKey[k]?.length)
-    .map((key) => ({
-      key,
-      title: MARKET_TITLE[key] || key,
-      outcomes: byKey[key],
-    }));
-}
-
-async function loadEvents(apiKey: string, sport: string, markets: string) {
-  const url = new URL(`https://api.the-odds-api.com/v4/sports/${sport}/odds`);
-  url.searchParams.set("apiKey", apiKey);
-  url.searchParams.set("regions", "uk,eu");
-  url.searchParams.set("markets", markets);
-  url.searchParams.set("oddsFormat", "decimal");
-  const res = await fetch(url.toString(), { next: { revalidate: 45 } });
-  if (!res.ok) return [] as Event[];
-  return (await res.json()) as Event[];
-}
+import { SPORTS, loadSportEvents, mergeMarkets } from "@/lib/odds";
 
 export async function GET(req: Request) {
   const apiKey = process.env.ODDS_API_KEY;
@@ -94,9 +24,7 @@ export async function GET(req: Request) {
 
   for (const sport of order) {
     try {
-      let list = await loadEvents(apiKey, sport, "h2h,totals,btts,spreads");
-      if (!list.length) list = await loadEvents(apiKey, sport, "h2h");
-
+      const list = await loadSportEvents(apiKey, sport);
       const ev =
         list.find((e) => e.id === id) ||
         list.find(
@@ -118,7 +46,7 @@ export async function GET(req: Request) {
         markets: mergeMarkets(ev),
       });
     } catch {
-      /* next */
+      /* try next sport */
     }
   }
 
