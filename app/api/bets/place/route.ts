@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { SPORTS, loadSportEvents, mergeMarkets, type OddsEvent } from "@/lib/odds";
+import { SPORTS, loadEvents, loadSportEvents, mergeMarkets, type OddsEvent } from "@/lib/odds";
 import {
   MAX_LEGS,
   MAX_PAYOUT,
@@ -75,7 +75,10 @@ export async function POST(req: Request) {
   try {
     for (const l of legsIn) {
       const sport = l.sport as string;
-      if (!cache.has(sport)) cache.set(sport, await loadSportEvents(apiKey, sport));
+      if (!cache.has(sport)) {
+        const onlyH2h = legsIn.filter((x) => x.sport === sport).every((x) => x.market === "h2h");
+        cache.set(sport, onlyH2h ? await loadEvents(apiKey, sport, "h2h") : await loadSportEvents(apiKey, sport));
+      }
       const ev = cache.get(sport)!.find((e) => e.id === l.eventId);
       if (!ev) {
         return NextResponse.json({ error: "A match is no longer available" }, { status: 409 });
@@ -136,6 +139,12 @@ export async function POST(req: Request) {
   if (error) {
     if (error.message.includes("insufficient_balance")) {
       return NextResponse.json({ error: "Not enough balance" }, { status: 400 });
+    }
+    if (error.message.includes("account_frozen")) {
+      return NextResponse.json(
+        { error: "Your account is frozen. Contact customer service." },
+        { status: 403 }
+      );
     }
     console.error("place_bets failed:", error.message);
     return NextResponse.json({ error: "Could not place bet" }, { status: 500 });

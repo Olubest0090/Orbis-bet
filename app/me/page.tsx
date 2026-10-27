@@ -10,7 +10,7 @@ export default async function MePage() {
   const db = supabaseAdmin();
   const { data: user } = await db
     .from("orbis_users")
-    .select("leader_name, nation_id, balance, shares")
+    .select("leader_name, nation_id, balance, shares, status, is_admin")
     .eq("id", userId)
     .single();
   if (!user) redirect("/login");
@@ -18,6 +18,13 @@ export default async function MePage() {
   return (
     <main className="min-h-screen p-4 pb-24 max-w-lg mx-auto">
       <h1 className="text-xl font-bold mb-4">Me</h1>
+
+      {user.status === "frozen" && (
+        <div className="mb-4 rounded-xl border border-[var(--danger)] p-3 text-sm text-[var(--danger)]">
+          Your account is frozen. You can look around but can&apos;t bet or move money. Contact customer service.
+        </div>
+      )}
+
       <p className="text-sm text-[var(--muted)]">Leader</p>
       <p className="font-semibold">{user.leader_name}</p>
       <p className="text-xs text-[var(--muted)]">Nation #{user.nation_id}</p>
@@ -29,6 +36,14 @@ export default async function MePage() {
         <Link href="/me/withdraw" className="rounded-xl border border-[var(--green)] py-3 text-center text-sm font-semibold text-[var(--green)]">Withdraw</Link>
         <Link href="/me/shares" className="rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-center text-sm font-semibold">Shares</Link>
       </div>
+      <Link href="/me/support" className="mt-3 block rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-center text-sm font-semibold">
+        Customer service
+      </Link>
+      {user.is_admin && (
+        <Link href="/admin" className="mt-3 block rounded-xl border border-[var(--green)] py-3 text-center text-sm font-semibold text-[var(--green)]">
+          Admin dashboard
+        </Link>
+      )}
       <BottomNav />
     </main>
   );

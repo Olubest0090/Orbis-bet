@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import SlipBar from "@/app/components/SlipBar";
+import { useSlip, type SlipLeg } from "@/lib/slip";
 
 type Match = {
   id: string;
@@ -18,10 +19,10 @@ type Match = {
 };
 
 export default function HomeMatchList() {
-  const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const { toggle, has } = useSlip();
 
   useEffect(() => {
     let cancelled = false;
@@ -60,12 +61,26 @@ export default function HomeMatchList() {
     }
   }
 
-  function openMatch(m: Match) {
+  function moreHref(m: Match) {
     const q = new URLSearchParams();
     if (m.sport_key) q.set("sport", m.sport_key);
     q.set("home", m.home);
     q.set("away", m.away);
-    router.push(`/match/${encodeURIComponent(m.id)}?${q.toString()}`);
+    return `/match/${encodeURIComponent(m.id)}?${q.toString()}`;
+  }
+
+  function legFor(m: Match, selection: string, price: number): SlipLeg {
+    return {
+      eventId: m.id,
+      sport: m.sport_key || "",
+      home: m.home,
+      away: m.away,
+      commence: m.commence,
+      marketKey: "h2h",
+      marketTitle: "1X2",
+      selection,
+      price,
+    };
   }
 
   if (loading) {
@@ -76,20 +91,15 @@ export default function HomeMatchList() {
   }
 
   return (
-    <div className="space-y-3 px-4">
+    <div className="space-y-3 px-4 pb-16">
       {matches.map((m) => {
         const hasOdds =
           m.odds.home != null || m.odds.draw != null || m.odds.away != null;
+        const started = !!m.live || new Date(m.commence).getTime() <= Date.now();
         return (
           <div
             key={m.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => openMatch(m)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") openMatch(m);
-            }}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 active:opacity-90"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4"
           >
             <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
               {m.live && (
@@ -116,31 +126,45 @@ export default function HomeMatchList() {
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {(
                   [
-                    ["1", m.odds.home],
-                    ["X", m.odds.draw],
-                    ["2", m.odds.away],
+                    ["1", m.home, m.odds.home],
+                    ["X", "Draw", m.odds.draw],
+                    ["2", m.away, m.odds.away],
                   ] as const
-                ).map(([label, price]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="rounded-lg border border-[var(--border)] bg-[var(--bg)] py-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openMatch(m);
-                    }}
-                  >
-                    <div className="text-xs text-[var(--muted)]">{label}</div>
-                    <div className="font-semibold text-[var(--green)]">
-                      {price != null ? price.toFixed(2) : "—"}
-                    </div>
-                  </button>
-                ))}
+                ).map(([label, selection, price]) => {
+                  const canPick = price != null && !started;
+                  const leg = price != null ? legFor(m, selection, price) : null;
+                  const picked = leg ? has(leg) : false;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      disabled={!canPick}
+                      onClick={() => leg && toggle(leg)}
+                      className={`rounded-lg border py-2 disabled:opacity-50 ${
+                        picked
+                          ? "border-[var(--green)] bg-[var(--green)]/10"
+                          : "border-[var(--border)] bg-[var(--bg)]"
+                      }`}
+                    >
+                      <div className="text-xs text-[var(--muted)]">{label}</div>
+                      <div className="font-semibold text-[var(--green)]">
+                        {price != null ? price.toFixed(2) : "—"}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-2 text-xs text-[var(--muted)]">
-                Odds unavailable (live/suspended) · tap for markets
+                Odds unavailable (live/suspended)
               </p>
+            )}
+            {!started && (
+              <div className="mt-2 text-right">
+                <a href={moreHref(m)} className="text-[11px] text-[var(--muted)] underline">
+                  More markets ›
+                </a>
+              </div>
             )}
           </div>
         );
@@ -148,6 +172,7 @@ export default function HomeMatchList() {
       {!loading && matches.length === 0 && (
         <p className="text-sm text-[var(--muted)]">No fixtures right now.</p>
       )}
+      <SlipBar above />
     </div>
   );
 }

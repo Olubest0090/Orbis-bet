@@ -6,7 +6,8 @@ import { MAX_LEGS, MAX_PAYOUT, MAX_STAKE, MIN_STAKE, parseAmount } from "@/lib/b
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-export default function SlipBar() {
+export default function SlipBar({ above = false }: { above?: boolean }) {
+  const pos = above ? "bottom-11" : "bottom-0";
   const { legs, remove, clear, updatePrices } = useSlip();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"single" | "acca">("acca");
@@ -81,7 +82,7 @@ export default function SlipBar() {
 
   if (legs.length === 0 && done) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-between border-t border-[var(--green)] bg-[var(--card)] p-3 text-xs">
+      <div className={`fixed ${pos} left-0 right-0 z-30 flex items-center justify-between border-t border-[var(--green)] bg-[var(--card)] p-3 text-xs`}>
         <span className="text-[var(--green)]">Bet placed ✓</span>
         <span className="flex gap-4">
           <a href="/bets" className="underline">My Bets</a>
@@ -94,7 +95,7 @@ export default function SlipBar() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--border)] bg-[var(--card)]">
+    <div className={`fixed ${pos} left-0 right-0 z-30 border-t border-[var(--border)] bg-[var(--card)]`}>
       <button
         type="button"
         className="flex w-full items-center justify-between p-3 text-left text-xs"

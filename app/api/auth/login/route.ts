@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const db = supabaseAdmin();
     const { data: user, error } = await db
       .from("orbis_users")
-      .select("id, password_hash")
+      .select("id, password_hash, status")
       .eq("leader_lower", leader.toLowerCase())
       .maybeSingle();
 
@@ -36,6 +36,12 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Invalid leader name or password" },
         { status: 401 }
+      );
+    }
+    if (user.status === "deleted") {
+      return NextResponse.json(
+        { error: "This account has been removed." },
+        { status: 403 }
       );
     }
 

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const COOKIE = "orbis_session";
 
@@ -60,9 +61,28 @@ export async function clearSession() {
   jar.delete(COOKIE);
 }
 
-export async function getSessionUserId(): Promise<string | null> {
+async function readSessionUserId(): Promise<string | null> {
   const jar = await cookies();
   const raw = jar.get(COOKIE)?.value;
   if (!raw) return null;
   return unsign(raw);
+}
+
+export type SessionUser = { id: string; status: string; is_admin: boolean };
+
+/** Signed-in user with account status. Deleted accounts count as signed out. */
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const id = await readSessionUserId();
+  if (!id) return null;
+  const { data } = await supabaseAdmin()
+    .from("orbis_users")
+    .select("id, status, is_admin")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data || data.status === "deleted") return null;
+  return data as SessionUser;
+}
+
+export async function getSessionUserId(): Promise<string | null> {
+  return (await getSessionUser())?.id ?? null;
 }
