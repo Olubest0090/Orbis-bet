@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Turnstile from "@/app/components/Turnstile";
+import Logo from "@/app/components/Logo";
 
 function passwordOk(p: string) {
   return /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p) && p.length >= 8;
@@ -65,9 +66,7 @@ export default function ResetPage() {
     <main className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-xl">
         <div className="mb-5 text-center">
-          <div className="text-2xl font-bold">
-            <span className="text-[var(--green)]">Orbis</span> Bet
-          </div>
+          <div className="flex justify-center"><Logo size={38} /></div>
           <p className="mt-1 text-sm text-[var(--muted)]">Reset your password</p>
         </div>
 
